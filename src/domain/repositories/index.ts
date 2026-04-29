@@ -1,0 +1,5 @@
+export type { IRepository } from './IRepository'
+export type { IAccountRepository } from './IAccountRepository'
+export type { IAccountHistoryRepository } from './IAccountHistoryRepository'
+export type { IFixedMovementRepository } from './IFixedMovementRepository'
+export type { IExtraordinaryMovementRepository } from './IExtraordinaryMovementRepository'
