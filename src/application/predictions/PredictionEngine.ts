@@ -1,9 +1,12 @@
 import type { FixedMovement } from '@/domain/entities/FixedMovement'
 import type { ExtraordinaryMovement } from '@/domain/entities/ExtraordinaryMovement'
 import type { AccountHistoryEntry } from '@/domain/entities/AccountHistoryEntry'
+import type { Payroll } from '@/domain/entities/Payroll'
+import type { IRPFConfig } from '@/domain/entities/IRPFConfig'
 import { expandFixedMovement } from './movementExpander'
 import type { ExpandedOccurrence } from './movementExpander'
 import { sampleAmounts, percentile } from './monteCarloSampler'
+import { expandPayroll } from '@/application/payroll/PayrollExpander'
 
 export interface MonthlyAccountPrediction {
   accountId: string
@@ -38,6 +41,11 @@ function applyAmount(
   return balance
 }
 
+export interface PredictionEngineOptions {
+  payrolls?: Payroll[]
+  irpfConfigs?: IRPFConfig[]
+}
+
 export class PredictionEngine {
   run(
     fixedMovements: FixedMovement[],
@@ -46,12 +54,19 @@ export class PredictionEngine {
     startingBalances: Record<string, number>,
     horizonMonths: number,
     referenceDate: Date = new Date(),
+    options: PredictionEngineOptions = {},
   ): PredictionResult {
     const startYear = referenceDate.getFullYear()
     const startMonth = referenceDate.getMonth()
     const results: MonthlyAccountPrediction[] = []
 
     const runningBalances: Record<string, number> = { ...startingBalances }
+    const { payrolls = [], irpfConfigs = [] } = options
+
+    const getActiveIRPFConfig = (date: string): IRPFConfig | undefined =>
+      irpfConfigs
+        .filter((c) => c.validFrom <= date)
+        .sort((a, b) => b.validFrom.localeCompare(a.validFrom))[0]
 
     for (let i = 0; i < horizonMonths; i++) {
       const totalMonths = startMonth + i
@@ -60,7 +75,13 @@ export class PredictionEngine {
 
       for (const accountId of accountIds) {
         const fixed = fixedMovements.flatMap((m) => expandFixedMovement(m, year, month))
-        const relevant = fixed.filter(
+        const payrollOccs = payrolls.flatMap((p) =>
+          expandPayroll(p, year, month, getActiveIRPFConfig)
+            .flatMap(({ incomeOccurrence, irpfOccurrence }) =>
+              irpfOccurrence ? [incomeOccurrence, irpfOccurrence] : [incomeOccurrence]
+            )
+        )
+        const relevant = [...fixed, ...payrollOccs].filter(
           (o) => o.accountId === accountId || o.targetAccountId === accountId,
         )
 

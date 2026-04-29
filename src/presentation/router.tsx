@@ -4,6 +4,7 @@ import AccountsPage from './pages/AccountsPage'
 import FixedMovementsPage from './pages/FixedMovementsPage'
 import ExtraordinaryMovementsPage from './pages/ExtraordinaryMovementsPage'
 import PredictionsPage from './pages/PredictionsPage'
+import PayrollsPage from './pages/PayrollsPage'
 import SettingsPage from './pages/SettingsPage'
 
 export const router = createBrowserRouter(
@@ -16,6 +17,7 @@ export const router = createBrowserRouter(
         { path: 'accounts', element: <AccountsPage /> },
         { path: 'fixed-movements', element: <FixedMovementsPage /> },
         { path: 'extraordinary-movements', element: <ExtraordinaryMovementsPage /> },
+        { path: 'payrolls', element: <PayrollsPage /> },
         { path: 'predictions', element: <PredictionsPage /> },
         { path: 'settings', element: <SettingsPage /> },
       ],
