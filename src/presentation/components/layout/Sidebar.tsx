@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/fixed-movements', label: 'Mov. Fijos', icon: '🔄' },
   { to: '/extraordinary-movements', label: 'Mov. Extraordinarios', icon: '⚡' },
   { to: '/payrolls', label: 'Nóminas', icon: '💼' },
+  { to: '/loans', label: 'Préstamos', icon: '🏦' },
   { to: '/predictions', label: 'Predicciones', icon: '📈' },
   { to: '/settings', label: 'Ajustes', icon: '⚙️' },
 ]

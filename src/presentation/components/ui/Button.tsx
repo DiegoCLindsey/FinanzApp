@@ -1,4 +1,4 @@
-type ButtonVariant = 'primary' | 'secondary' | 'danger'
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
 type ButtonSize = 'sm' | 'md'
 
 interface ButtonProps {
@@ -15,6 +15,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-white hover:opacity-90',
   secondary: 'bg-surface-elevated text-text-primary border border-border hover:border-primary',
   danger: 'bg-negative text-white hover:opacity-90',
+  ghost: 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated',
 }
 
 const sizeClasses: Record<ButtonSize, string> = {

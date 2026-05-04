@@ -3,10 +3,13 @@ import type { ExtraordinaryMovement } from '@/domain/entities/ExtraordinaryMovem
 import type { AccountHistoryEntry } from '@/domain/entities/AccountHistoryEntry'
 import type { Payroll } from '@/domain/entities/Payroll'
 import type { IRPFConfig } from '@/domain/entities/IRPFConfig'
+import type { Loan } from '@/domain/entities/Loan'
+import type { LoanAmortization } from '@/domain/entities/LoanAmortization'
 import { expandFixedMovement } from './movementExpander'
 import type { ExpandedOccurrence } from './movementExpander'
 import { sampleAmounts, percentile } from './monteCarloSampler'
 import { expandPayroll } from '@/application/payroll/PayrollExpander'
+import { buildLoanSchedule, getScheduleRowForMonth } from '@/application/loans/LoanCalculator'
 
 export interface MonthlyAccountPrediction {
   accountId: string
@@ -44,6 +47,8 @@ function applyAmount(
 export interface PredictionEngineOptions {
   payrolls?: Payroll[]
   irpfConfigs?: IRPFConfig[]
+  loans?: Loan[]
+  loanAmortizations?: LoanAmortization[]
 }
 
 export class PredictionEngine {
@@ -61,7 +66,13 @@ export class PredictionEngine {
     const results: MonthlyAccountPrediction[] = []
 
     const runningBalances: Record<string, number> = { ...startingBalances }
-    const { payrolls = [], irpfConfigs = [] } = options
+    const { payrolls = [], irpfConfigs = [], loans = [], loanAmortizations = [] } = options
+
+    // Pre-build loan schedules once (they're deterministic)
+    const loanSchedules = loans.map((loan) => ({
+      loan,
+      schedule: buildLoanSchedule(loan, loanAmortizations.filter((a) => a.loanId === loan.id)),
+    }))
 
     const getActiveIRPFConfig = (date: string): IRPFConfig | undefined =>
       irpfConfigs
@@ -81,7 +92,26 @@ export class PredictionEngine {
               irpfOccurrence ? [incomeOccurrence, irpfOccurrence] : [incomeOccurrence]
             )
         )
-        const relevant = [...fixed, ...payrollOccs].filter(
+        const loanOccs: ExpandedOccurrence[] = loanSchedules
+          .filter(({ loan }) => loan.accountId === accountId)
+          .flatMap(({ loan, schedule }) => {
+            const row = getScheduleRowForMonth(schedule, year, month + 1)
+            if (!row) return []
+            return [{
+              movementId: loan.id,
+              concept: `Cuota préstamo: ${loan.concept}`,
+              type: 'expense' as const,
+              baseAmount: row.quota,
+              monteCarloVariance: 0,
+              accountId: loan.accountId,
+              targetAccountId: null,
+              date: row.date,
+              label: loan.label,
+              isBasicExpense: false,
+            }]
+          })
+
+        const relevant = [...fixed, ...payrollOccs, ...loanOccs].filter(
           (o) => o.accountId === accountId || o.targetAccountId === accountId,
         )
 
