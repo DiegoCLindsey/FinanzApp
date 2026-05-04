@@ -1,4 +1,4 @@
-type BadgeVariant = 'income' | 'expense' | 'transfer' | 'default'
+type BadgeVariant = 'income' | 'expense' | 'transfer' | 'default' | 'success'
 
 interface BadgeProps {
   children: React.ReactNode
@@ -10,6 +10,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   expense: 'bg-negative/20 text-negative',
   transfer: 'bg-primary/20 text-primary',
   default: 'bg-surface-elevated text-text-secondary',
+  success: 'bg-positive/20 text-positive',
 }
 
 export default function Badge({ children, variant = 'default' }: BadgeProps) {
